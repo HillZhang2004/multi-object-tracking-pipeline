@@ -1,3 +1,40 @@
+"""
+CS153 Final Project: Multi-Object Tracking Pipeline
+File: run_yolo_kitti.py
+Authors: Spencer Merodio, Hill Zhang
+Date: 2026-04-07
+
+AI Use:
+We used an AI assistant in a limited way on this script:
+  - Reformatting comments and the file header so the script is easier to read.
+  - Checking that the code structure matched the project plan from our proposal.
+  - Sanity-checking a few implementation details for loading a pretrained YOLOv5
+    model, iterating through KITTI image sequences, and saving detections to CSV.
+
+The project idea, pipeline design, and code organization came from our proposal
+and our own implementation work. This script reflects the first detection stage
+of the project: running a pretrained detector on KITTI frames and saving the
+resulting detections for later tracking.
+
+Summary:
+This script runs a pretrained YOLOv5 detector on image sequences from the KITTI
+tracking training set. For each frame, it saves:
+  - bounding box coordinates
+  - confidence score
+  - class id
+  - class name
+
+For the first pass, the script keeps only the classes most relevant to our
+project: car and person. The detections are written to CSV files in
+outputs/detections/.
+
+Usage:
+  - Make sure KITTI tracking images are stored under:
+        data/kitti/tracking/training/image_02/
+  - Then run:
+        python scripts/run_yolo_kitti.py
+"""
+
 from pathlib import Path
 import pandas as pd
 import torch
@@ -12,7 +49,7 @@ OUTPUT_DIR = Path("outputs/detections")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Keep the first pass simple.
-# These are the two classes most relevant for your proposal.
+# These are the two classes most relevant for our proposal.
 KEEP_CLASSES = {"car", "person"}
 
 # Load a pretrained YOLOv5 model.
@@ -27,7 +64,7 @@ model.eval()
 sequence_dirs = sorted([p for p in KITTI_IMAGE_ROOT.iterdir() if p.is_dir()])
 
 # For the first test, only run one sequence.
-# Later you can remove [:1] and run all sequences.
+# Later we can remove [:1] and run all sequences.
 for seq_dir in sequence_dirs[:1]:
     rows = []
     image_paths = sorted(seq_dir.glob("*.png"))

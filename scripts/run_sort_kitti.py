@@ -1,3 +1,41 @@
+"""
+CS153 Final Project: Multi-Object Tracking Pipeline
+File: run_sort_kitti.py
+Authors: Spencer Merodio, Hill Zhang
+Date: 2026-04-07
+
+AI Use:
+We used an AI assistant in a limited way on this script:
+  - Reformatting comments and the file header so the script is easier to read.
+  - Checking that the code structure matched the project plan from our proposal.
+  - Sanity-checking a few implementation details for reading detection CSV files,
+    passing detections into SORT, and saving motion-based tracks to CSV.
+
+The project idea, pipeline design, and code organization came from our proposal
+and our own implementation work. This script reflects the first tracking stage
+of the project: taking saved detections and generating motion-based tracks using
+SORT as a baseline.
+
+Summary:
+This script reads detection CSV files produced by run_yolo_kitti.py and uses
+them as input to a SORT tracker. For each sequence, it:
+  - loads frame-level detections
+  - separates detections by class
+  - updates the SORT tracker frame by frame
+  - saves track ids and bounding boxes to CSV files in outputs/sort_tracks/
+
+For the first pass, the script tracks the two classes most relevant to our
+project: car and person.
+
+Usage:
+  - Make sure detection CSV files already exist in:
+        outputs/detections/
+  - Make sure the SORT code is available under:
+        third_party/sort/
+  - Then run:
+        python scripts/run_sort_kitti.py
+"""
+
 from pathlib import Path
 import sys
 import numpy as np

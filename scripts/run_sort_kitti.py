@@ -8,7 +8,7 @@ AI Use:
 We used an AI assistant in a limited way on this script:
   - Reformatting comments and the file header so the script is easier to read.
   - Checking that the code structure matched the project plan from our proposal.
-  - Sanity-checking a few implementation details for reading detection CSV files,
+  - Sanity checking a few implementation details for reading detection CSV files,
     passing detections into SORT, and saving motion-based tracks to CSV.
 
 The project idea, pipeline design, and code organization came from our proposal
@@ -42,19 +42,24 @@ import numpy as np
 import pandas as pd
 
 # Put the SORT code in third_party/sort first.
+# Sort isnt pip installed, so we have to add it to the path manually.
 sys.path.append("third_party/sort")
 from sort import Sort
 
+# detections come from the yolo script, tracks go into sort_tracks
 DET_DIR = Path("outputs/detections")
 TRACK_DIR = Path("outputs/sort_tracks")
 TRACK_DIR.mkdir(parents=True, exist_ok=True)
 
+# Classes we want to track with SORT
+# Same as with yolo script
 CLASSES_TO_TRACK = ["car", "person"]
 
 for det_file in sorted(DET_DIR.glob("*.csv")):
     seq_name = det_file.stem
     det_df = pd.read_csv(det_file)
 
+    # Skip empty sequences
     if det_df.empty:
         print(f"{seq_name}: no detections found")
         continue
@@ -63,12 +68,15 @@ for det_file in sorted(DET_DIR.glob("*.csv")):
     all_tracks = []
 
     print(f"Running SORT on sequence {seq_name}")
-
+    
+    # Run SORT separately for each class. This is a simple way to avoid ID switches
     for class_name in CLASSES_TO_TRACK:
         class_df = det_df[det_df["class_name"] == class_name].copy()
 
+        # Each class gets a tracker
         tracker = Sort(max_age=5, min_hits=3, iou_threshold=0.3)
 
+        # Update the tracker frame by frame
         for frame in range(max_frame + 1):
             frame_df = class_df[class_df["frame"] == frame]
 
@@ -77,6 +85,7 @@ for det_file in sorted(DET_DIR.glob("*.csv")):
             else:
                 dets = np.empty((0, 5), dtype=float)
 
+            # returns a list of tracks, each with [x1, y1, x2, y2, track_id]
             tracks = tracker.update(dets)
 
             for trk in tracks:
@@ -94,6 +103,7 @@ for det_file in sorted(DET_DIR.glob("*.csv")):
                     }
                 )
 
+    # export all tracks for this sequence to a CSV file
     out_file = TRACK_DIR / f"{seq_name}.csv"
     pd.DataFrame(all_tracks).to_csv(out_file, index=False)
     print(f"Saved SORT tracks to {out_file}")

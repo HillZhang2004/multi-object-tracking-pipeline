@@ -8,7 +8,7 @@ AI Use:
 We used an AI assistant in a limited way on this script:
   - Reformatting comments and the file header so the script is easier to read.
   - Checking that the code structure matched the project plan from our proposal.
-  - Sanity-checking a few implementation details for loading a pretrained YOLOv5
+  - Sanity checking a few implementation details for loading a pretrained YOLOv5
     model, iterating through KITTI image sequences, and saving detections to CSV.
 
 The project idea, pipeline design, and code organization came from our proposal
@@ -40,9 +40,7 @@ import pandas as pd
 import torch
 
 # Change this to wherever the KITTI tracking images are stored locally.
-# Example structure:
-# data/kitti/tracking/training/image_02/0000/000000.png
-KITTI_IMAGE_ROOT = Path("data/kitti/tracking/training/image_02")
+KITTI_IMAGE_ROOT = Path("/Users/spencermerodio/Downloads/data/kitti/tracking/training/image_02")
 
 # Detections will be saved here.
 OUTPUT_DIR = Path("outputs/detections")

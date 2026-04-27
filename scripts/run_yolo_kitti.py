@@ -40,7 +40,7 @@ import pandas as pd
 import torch
 
 # Change this to wherever the KITTI tracking images are stored locally.
-KITTI_IMAGE_ROOT = Path("/Users/spencermerodio/Downloads/data/kitti/tracking/training/image_02")
+KITTI_IMAGE_ROOT = Path("data/kitti/tracking/training/image_02")
 
 # Detections will be saved here.
 OUTPUT_DIR = Path("outputs/detections")

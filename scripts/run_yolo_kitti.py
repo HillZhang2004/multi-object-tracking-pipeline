@@ -37,7 +37,7 @@ Usage:
 
 from pathlib import Path
 import pandas as pd
-import torch
+from ultralytics import YOLO
 
 # Change this to wherever the KITTI tracking images are stored locally.
 KITTI_IMAGE_ROOT = Path("data/kitti/tracking/training/image_02")
@@ -50,14 +50,13 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # These are the two classes most relevant for our proposal.
 KEEP_CLASSES = {"car", "person"}
 
-# Load a pretrained YOLOv5 model.
-# First run may download weights.
-model = torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True)
-
 # Simple thresholds for a first baseline.
-model.conf = 0.25
-model.iou = 0.45
-model.eval()
+CONF_THRESHOLD = 0.25
+IOU_THRESHOLD = 0.45
+
+# Load a pretrained YOLOv5 model through the ultralytics package.
+# First run will download the weights file (yolov5su.pt) into the local cache.
+model = YOLO("yolov5su.pt")
 
 sequence_dirs = sorted([p for p in KITTI_IMAGE_ROOT.iterdir() if p.is_dir()])
 
@@ -72,24 +71,35 @@ for seq_dir in sequence_dirs[:1]:
     for img_path in image_paths:
         frame_id = int(img_path.stem)
 
-        results = model(str(img_path))
-        det_df = results.pandas().xyxy[0].copy()
+        # ultralytics returns a list of Results, one per input image.
+        results = model(str(img_path), conf=CONF_THRESHOLD, iou=IOU_THRESHOLD, verbose=False)
+        result = results[0]
+        names = result.names  # class_id -> class_name
 
-        # Keep only car and person for now.
-        det_df = det_df[det_df["name"].isin(KEEP_CLASSES)]
+        boxes = result.boxes
+        if boxes is None or len(boxes) == 0:
+            continue
 
-        for _, r in det_df.iterrows():
+        xyxy = boxes.xyxy.cpu().numpy()
+        confs = boxes.conf.cpu().numpy()
+        cls_ids = boxes.cls.cpu().numpy().astype(int)
+
+        for (x1, y1, x2, y2), conf, cid in zip(xyxy, confs, cls_ids):
+            class_name = names[int(cid)]
+            # Keep only car and person for now.
+            if class_name not in KEEP_CLASSES:
+                continue
             rows.append(
                 {
                     "sequence": seq_dir.name,
                     "frame": frame_id,
-                    "x1": float(r["xmin"]),
-                    "y1": float(r["ymin"]),
-                    "x2": float(r["xmax"]),
-                    "y2": float(r["ymax"]),
-                    "confidence": float(r["confidence"]),
-                    "class_id": int(r["class"]),
-                    "class_name": str(r["name"]),
+                    "x1": float(x1),
+                    "y1": float(y1),
+                    "x2": float(x2),
+                    "y2": float(y2),
+                    "confidence": float(conf),
+                    "class_id": int(cid),
+                    "class_name": str(class_name),
                 }
             )
 

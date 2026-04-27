@@ -8,3 +8,6 @@ outputs/
 runs/
 .ipynb_checkpoints/
 .DS_Store
+.claude/
+third_party/
+*.pt

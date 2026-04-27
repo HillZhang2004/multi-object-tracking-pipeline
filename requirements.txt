@@ -4,3 +4,8 @@ pandas
 numpy
 opencv-python
 matplotlib
+ultralytics
+scipy
+deep-sort-realtime
+scikit-image
+filterpy

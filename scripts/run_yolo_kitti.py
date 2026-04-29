@@ -40,7 +40,8 @@ import pandas as pd
 from ultralytics import YOLO
 
 # Change this to wherever the KITTI tracking images are stored locally.
-KITTI_IMAGE_ROOT = Path("data/kitti/tracking/training/image_02")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+KITTI_IMAGE_ROOT = PROJECT_ROOT / "data" / "kitti" / "tracking" / "training" / "image_02"
 
 # Detections will be saved here.
 OUTPUT_DIR = Path("outputs/detections")
@@ -60,9 +61,8 @@ model = YOLO("yolov5su.pt")
 
 sequence_dirs = sorted([p for p in KITTI_IMAGE_ROOT.iterdir() if p.is_dir()])
 
-# For the first test, only run one sequence.
-# Later we can remove [:1] and run all sequences.
-for seq_dir in sequence_dirs[:1]:
+# Run the model on each sequence and save detections to CSV
+for seq_dir in sequence_dirs:
     rows = []
     image_paths = sorted(seq_dir.glob("*.png"))
 

@@ -71,6 +71,7 @@ def compute_iou(box_a, box_b):
     x_b = min(box_a[2], box_b[2])
     y_b = min(box_a[3], box_b[3])
 
+    # Compute intersection area and union area, then IoU
     inter = max(0, x_b - x_a) * max(0, y_b - y_a)
     if inter == 0:
         return 0.0
@@ -79,6 +80,7 @@ def compute_iou(box_a, box_b):
     area_b = max(0, box_b[2] - box_b[0]) * max(0, box_b[3] - box_b[1])
     denom = area_a + area_b - inter
 
+    # Avoid division by zero
     if denom <= 0:
         return 0.0
 
@@ -94,11 +96,14 @@ def match_detections(gt_boxes, pred_boxes, iou_thresh=IOU_THRESHOLD):
 
     The matched lists contain indices into the input lists.
     """
+    # If either list is empty, we have no matches and all are unmatched
     if len(gt_boxes) == 0 or len(pred_boxes) == 0:
         return [], [], list(range(len(gt_boxes))), list(range(len(pred_boxes)))
 
+    # Compute the cost matrix based on IoU (1 - IoU for the Hungarian algorithm)
     cost = np.zeros((len(gt_boxes), len(pred_boxes)))
 
+    # Fill the cost matrix with 1 - IoU values
     for i, gt_box in enumerate(gt_boxes):
         for j, pred_box in enumerate(pred_boxes):
             cost[i, j] = 1.0 - compute_iou(gt_box, pred_box)
@@ -108,6 +113,8 @@ def match_detections(gt_boxes, pred_boxes, iou_thresh=IOU_THRESHOLD):
     matched_gt = []
     matched_pred = []
 
+    # Only consider matches where IoU is above the threshold (cost below 1 - threshold)
+    # because the Hungarian algorithm will always produce a full matching
     for r, c in zip(row_ind, col_ind):
         if cost[r, c] <= (1.0 - iou_thresh):
             matched_gt.append(r)
@@ -141,6 +148,7 @@ def compute_mota_idf1(gt_df: pd.DataFrame, pred_df: pd.DataFrame) -> dict:
     match_counts = defaultdict(lambda: defaultdict(int))
     prev_gt_to_pred = {}
 
+    # Loop through frames and match detections to count TP, FP, FN, and ID switches.
     for frame in frames:
         gt_frame = gt_df[gt_df["frame"] == frame]
         pred_frame = pred_df[pred_df["frame"] == frame]
@@ -151,6 +159,7 @@ def compute_mota_idf1(gt_df: pd.DataFrame, pred_df: pd.DataFrame) -> dict:
         pred_boxes = pred_frame[["x1", "y1", "x2", "y2"]].values.tolist()
         pred_ids = pred_frame["track_id"].tolist()
 
+        # Needed AI assistance to help me debug this section
         matched_gt, matched_pred, unmatched_gt, unmatched_pred = match_detections(
             gt_boxes,
             pred_boxes,
@@ -162,6 +171,7 @@ def compute_mota_idf1(gt_df: pd.DataFrame, pred_df: pd.DataFrame) -> dict:
 
         curr_gt_to_pred = {}
 
+        # Check for ID switches among matched pairs
         for gt_idx, pred_idx in zip(matched_gt, matched_pred):
             gt_id = gt_ids[gt_idx]
             pred_id = pred_ids[pred_idx]
@@ -169,6 +179,8 @@ def compute_mota_idf1(gt_df: pd.DataFrame, pred_df: pd.DataFrame) -> dict:
             curr_gt_to_pred[gt_id] = pred_id
             match_counts[gt_id][pred_id] += 1
 
+            # If this GT was previously matched to a different predicted ID
+            # increment ID switch count
             if gt_id in prev_gt_to_pred and prev_gt_to_pred[gt_id] != pred_id:
                 idsw += 1
 
@@ -181,7 +193,8 @@ def compute_mota_idf1(gt_df: pd.DataFrame, pred_df: pd.DataFrame) -> dict:
     gt_ids_all = list(match_counts.keys())
     pred_ids_all = list({p for gt in match_counts.values() for p in gt})
 
-    if gt_ids_all and pred_ids_all:
+   # We also had confusion about this part, so we used
+   # AI to help us sanity check 
         cost_idf = np.zeros((len(gt_ids_all), len(pred_ids_all)))
 
         for i, gt_id in enumerate(gt_ids_all):
@@ -360,6 +373,10 @@ for seq_name in sequences:
         deepsort_counts = compute_mota_idf1(gt_cls, deepsort_cls)
         deepsort_scores = summarize(deepsort_counts)
         deepsort_hota = compute_hota(gt_cls, deepsort_cls)
+
+
+        print(f"  [{class_name}]  SORT  → TP={sort_counts['TP']}  FP={sort_counts['FP']}  FN={sort_counts['FN']}  GT={sort_counts['num_gt_dets']}")
+        print(f"  [{class_name}]  DSORT → TP={deepsort_counts['TP']}  FP={deepsort_counts['FP']}  FN={deepsort_counts['FN']}  GT={deepsort_counts['num_gt_dets']}")
 
         print(
             f"  [{class_name}]  SORT  → MOTA={sort_scores['MOTA']:.4f}  "

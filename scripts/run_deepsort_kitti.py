@@ -56,10 +56,10 @@ KITTI_IMAGE_ROOT = Path("data/kitti/tracking/training/image_02")
 # Same as with the SORT script
 CLASSES_TO_TRACK = ["car", "person"]
 
-# Deep SORT hyperparameters
-MAX_COSINE_DISTANCE = 0.4
-MAX_AGE = 5
-N_INIT = 3
+# Deep SORT hyperparameter
+MAX_COSINE_DISTANCE = 0.9
+MAX_AGE = 1
+N_INIT = 20
 
 for det_file in sorted(DET_DIR.glob("*.csv")):
     seq_name = det_file.stem
@@ -83,8 +83,7 @@ for det_file in sorted(DET_DIR.glob("*.csv")):
         tracker = DeepSort(
             max_age=MAX_AGE,
             n_init=N_INIT,
-            max_cosine_distance=MAX_COSINE_DISTANCE,
-        )
+            max_cosine_distance=MAX_COSINE_DISTANCE,        )
 
         # Update the tracker frame by frame
         for frame in range(max_frame + 1):
@@ -94,6 +93,8 @@ for det_file in sorted(DET_DIR.glob("*.csv")):
             img_path = KITTI_IMAGE_ROOT / seq_name / f"{frame:06d}.png"
             img_bgr = cv2.imread(str(img_path))
 
+            # If the frame has detections, prepare them for Deep SORT
+            # Otherwise pass an empty list
             if len(frame_df) > 0 and img_bgr is not None:
                 # deep-sort-realtime expects a list of ([x,y,w,h], confidence, class) tuples
                 x1 = frame_df["x1"].to_numpy(dtype=float)
@@ -116,6 +117,7 @@ for det_file in sorted(DET_DIR.glob("*.csv")):
             # returns a list of Track objects
             tracks = tracker.update_tracks(raw_dets, frame=img_bgr)
 
+            # If the track is confirmed, save it to our output list with the same format as SORT
             for trk in tracks:
                 if not trk.is_confirmed():
                     continue

@@ -42,6 +42,8 @@ GT_DIR = PROJECT_ROOT / "data" / "kitti" / "tracking" / "training" / "label_02"
 
 # KITTI class names that map to our tracked classes.
 # We keep only the two main classes used in our project evaluation.
+# We also remap the class names to match the ones used in our detection 
+# and tracking outputs.
 KITTI_CLASS_MAP = {
     "Car": "car",
     "Pedestrian": "person",

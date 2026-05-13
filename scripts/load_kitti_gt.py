@@ -49,7 +49,9 @@ KITTI_CLASS_MAP = {
     "Pedestrian": "person",
 }
 
-# KITTI label columns from the tracking benchmark format.
+# Column schema follows the KITTI tracking benchmark label format.
+# Geiger et al., "Are we ready for Autonomous Driving? The KITTI Vision
+# Benchmark Suite," CVPR 2012. https://www.cvlibs.net/datasets/kitti/
 KITTI_COLS = [
     "frame",
     "track_id",

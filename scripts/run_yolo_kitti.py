@@ -57,6 +57,8 @@ IOU_THRESHOLD = 0.45
 
 # Load a pretrained YOLOv5 model through the ultralytics package.
 # First run will download the weights file (yolov5su.pt) into the local cache.
+# Pretrained YOLOv5su model loaded via the Ultralytics API.
+# Jocher et al., Ultralytics YOLOv5, https://github.com/ultralytics/yolov5 (2020)
 model = YOLO("yolov5su.pt")
 
 sequence_dirs = sorted([p for p in KITTI_IMAGE_ROOT.iterdir() if p.is_dir()])
@@ -76,6 +78,8 @@ for seq_dir in sequence_dirs:
         result = results[0]
         names = result.names  # class_id -> class_name
 
+        # Detection results accessed via Ultralytics Results API.
+        # See: https://docs.ultralytics.com/models/yolov5/
         boxes = result.boxes
         if boxes is None or len(boxes) == 0:
             continue

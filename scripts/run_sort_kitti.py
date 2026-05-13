@@ -74,6 +74,8 @@ for det_file in sorted(DET_DIR.glob("*.csv")):
         class_df = det_df[det_df["class_name"] == class_name].copy()
 
         # Each class gets a tracker
+        # SORT tracker: Bewley et al., "Simple Online and Realtime Tracking," ICIP 2016.
+        # Reference implementation: https://github.com/abewley/sort
         tracker = Sort(max_age=5, min_hits=3, iou_threshold=0.3)
 
         # Update the tracker frame by frame
@@ -85,7 +87,8 @@ for det_file in sorted(DET_DIR.glob("*.csv")):
             else:
                 dets = np.empty((0, 5), dtype=float)
 
-            # returns a list of tracks, each with [x1, y1, x2, y2, track_id]
+            # tracker.update() expects [x1,y1,x2,y2,conf] and returns [x1,y1,x2,y2,track_id].
+            # Output format defined by abewley/sort.
             tracks = tracker.update(dets)
 
             for trk in tracks:

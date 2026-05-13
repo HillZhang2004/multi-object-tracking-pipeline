@@ -201,6 +201,9 @@ def compute_mota_idf1(gt_df: pd.DataFrame, pred_df: pd.DataFrame) -> dict:
             for j, pred_id in enumerate(pred_ids_all):
                 cost_idf[i, j] = -match_counts[gt_id][pred_id]
 
+
+        # Hungarian algorithm via SciPy. Scipy.org, https://scipy.org
+        # Matching strategy (1 - IoU cost matrix) follows Bewley et al. ICIP 2016.
         row_ind, col_ind = linear_sum_assignment(cost_idf)
         idtp = int(-cost_idf[row_ind, col_ind].sum())
     else:
@@ -303,6 +306,9 @@ def compute_hota(
         else:
             ass_a = 0.0
 
+        # HOTA formula: Luiten et al., "HOTA: A Higher Order Metric for Evaluating
+        # Multi-Object Tracking," IJCV 2021. https://arxiv.org/abs/2009.14298
+        # Reference implementation: https://github.com/JonathonLuiten/TrackEval
         hota_scores.append(np.sqrt(det_a * ass_a))
 
     return float(np.mean(hota_scores)) if hota_scores else 0.0
@@ -311,9 +317,15 @@ def compute_hota(
 def summarize(counts: dict) -> dict:
     """Turn raw counts into MOTA and IDF1 scores."""
     num_gt = counts["num_gt_dets"]
+
+    # MOTA formula: Bernardin & Stiefelhagen, "Evaluating Multiple Object Tracking
+    # Performance: The CLEAR MOT Metrics," EURASIP J. Image Video Process., 2008.
     mota = 1.0 - (counts["FP"] + counts["FN"] + counts["IDSW"]) / max(num_gt, 1)
 
     denom_idf1 = 2 * counts["IDTP"] + counts["IDFP"] + counts["IDFN"]
+
+    # IDF1 formula: Ristani et al., "Performance Measures and a Data Set for
+    # Multi-Target, Multi-Camera Tracking," ECCV 2016.
     idf1 = 2 * counts["IDTP"] / max(denom_idf1, 1)
 
     return {"MOTA": round(mota, 4), "IDF1": round(idf1, 4)}

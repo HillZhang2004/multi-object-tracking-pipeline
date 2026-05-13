@@ -79,6 +79,9 @@ for det_file in sorted(DET_DIR.glob("*.csv")):
     for class_name in CLASSES_TO_TRACK:
         class_df = det_df[det_df["class_name"] == class_name].copy()
 
+        # Deep SORT tracker: Wojke et al., "Simple Online and Realtime Tracking with a
+        # Deep Association Metric," ICIP 2017. https://arxiv.org/abs/1703.07402
+        # Package: levan92/deep_sort_realtime, https://github.com/levan92/deep_sort_realtime
         # Each class gets a tracker
         tracker = DeepSort(
             max_age=MAX_AGE,
@@ -103,6 +106,8 @@ for det_file in sorted(DET_DIR.glob("*.csv")):
                 h  = (frame_df["y2"] - frame_df["y1"]).to_numpy(dtype=float)
                 confidences = frame_df["confidence"].to_numpy(dtype=float)
 
+                # Input format required by deep_sort_realtime: ([x,y,w,h], confidence, class_name).
+                # The frame image is passed so the appearance encoder can crop detections.
                 raw_dets = [
                     ([x1[i], y1[i], w[i], h[i]], confidences[i], class_name)
                     for i in range(len(frame_df))
@@ -122,6 +127,7 @@ for det_file in sorted(DET_DIR.glob("*.csv")):
                 if not trk.is_confirmed():
                     continue
 
+                # to_ltrb() is a deep_sort_realtime Track method returning [x1,y1,x2,y2].
                 # convert back to [x1, y1, x2, y2] to match the SORT output format
                 x1_out, y1_out, x2_out, y2_out = trk.to_ltrb()
 
